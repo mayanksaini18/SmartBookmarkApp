@@ -34,3 +34,35 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+the problem/blunder which i did while working on assigment and how i tackle them 
+
+1) Runtime Error: Cannot read properties of undefined (reading 'auth')
+
+Error !
+Cannot read properties of undefined (reading 'auth')
+
+Cause
+
+supabase was undefined because:
+I didn’t create the Supabase client properly
+
+fix : NEXT_PUBLIC_ prefix missing
+
+2) Wrong Redirect URL (supabase.co repeated twice)
+
+i feel this is the biggest blunder which i did and takes hour to decode ,
+
+the fix : https://xxxx.supabase.co/auth/v1/callback
+
+3) Realtime Not Updating (Needed Refresh)
+Issue:
+Bookmarks were not updating in real-time; I had to refresh manually.
+
+Cause
+Realtime was NOT enabled for the table in Supabase.
+
+Fix
+Enabled realtime for the bookmarks table using:
+
+alter publication supabase_realtime add table public.bookmarks;
