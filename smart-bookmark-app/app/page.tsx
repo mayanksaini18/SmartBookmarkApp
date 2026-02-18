@@ -1,110 +1,99 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { LogOut, Globe, Plus, Trash2, User } from "lucide-react"; // npm install lucide-react
+import { Plus, LogOut, Bookmark, Trash2, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
- 
+  const supabase = createClient();
 
   useEffect(() => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser();
-      if (!data.user) {
-        router.push("/login");
-      } else {
-        setUser(data.user);
-      }
+      if (!data.user) router.push("/login");
+      else setUser(data.user);
     };
     checkUser();
-
-    // Listen for auth changes (like signing out)
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") router.push("/login");
-    });
-
-    return () => authListener.subscription.unsubscribe();
   }, [router, supabase]);
 
-  if (!user) return null; // Prevent flicker while redirecting
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans">
-      {/* --- NAVBAR --- */}
-      <nav className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-              <Globe className="text-white w-5 h-5" />
+    <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white">
+      {/* HEADER */}
+      <header className="border-b border-black/5 py-4 px-6 sticky top-0 bg-white/80 backdrop-blur-xl z-50">
+        <div className="max-w-4xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2 font-bold tracking-tighter text-xl">
+            <div className="bg-black text-white p-1 rounded">
+              <Bookmark size={18} />
             </div>
-            <span className="text-xl font-bold tracking-tight">SmartMark</span>
+            SMARTMARK
           </div>
-
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end text-right">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Account</span>
-              <span className="text-sm font-medium text-slate-700">{user.email}</span>
-            </div>
-            <button
-              onClick={() => supabase.auth.signOut()}
-              className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-full transition-colors"
-              title="Logout"
-            >
-              <LogOut size={20} />
-            </button>
-          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => supabase.auth.signOut()}
+            className="hover:bg-black hover:text-white transition-all duration-300"
+          >
+            <LogOut className="mr-2 h-4 w-4" /> Sign Out
+          </Button>
         </div>
-      </nav>
+      </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        {/* --- WELCOME HEADER --- */}
-        <header className="mb-10">
-          <h1 className="text-3xl font-extrabold text-slate-900 mb-2">
-            Welcome back, {user.user_metadata?.full_name?.split(" ")[0] || "User"}! 👋
-          </h1>
-          <p className="text-slate-500">You have 0 saved bookmarks. Let's add some!</p>
-        </header>
+      <main className="max-w-4xl mx-auto px-6 py-12">
+        {/* ADD SECTION */}
+        <section className="mb-16">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] mb-6 text-black/40">Add New</h2>
+          <div className="flex flex-col md:flex-row gap-3">
+            <Input 
+              placeholder="Bookmark Title" 
+              className="border-black focus-visible:ring-black rounded-none"
+            />
+            <Input 
+              placeholder="URL (https://...)" 
+              className="border-black focus-visible:ring-black rounded-none"
+            />
+            <Button className="bg-black text-white hover:bg-black/90 rounded-none px-8">
+              <Plus className="mr-2 h-4 w-4" /> Save
+            </Button>
+          </div>
+        </section>
 
-        {/* --- ACTION GRID --- */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* FEED SECTION */}
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.2em] mb-6 text-black/40">Your Collection</h2>
           
-          {/* Add Bookmark Card */}
-          <div className="md:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Plus className="text-indigo-600" size={20} /> New Bookmark
-            </h3>
-            <div className="space-y-4">
-              <input 
-                type="text" 
-                placeholder="Title (e.g. Google)"
-                className="w-full px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-              <input 
-                type="url" 
-                placeholder="https://example.com"
-                className="w-full px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-              />
-              <button className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm transition-all active:scale-[0.98]">
-                Add to Collection
-              </button>
+          <div className="grid gap-4">
+            {/* Mockup of a Bookmark Card */}
+            <Card className="rounded-none border-black/10 hover:border-black transition-all duration-300 group shadow-none">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="font-medium">Next.js Documentation</span>
+                  <span className="text-xs text-black/40 font-mono">nextjs.org/docs</span>
+                </div>
+                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-black hover:text-white">
+                    <ExternalLink size={14} />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-500 hover:text-white border-transparent">
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Empty State */}
+            <div className="py-20 border border-dashed border-black/10 flex flex-col items-center justify-center text-black/30">
+              <p className="text-sm font-mono italic underline underline-offset-4">Nothing here yet...</p>
             </div>
           </div>
-
-          {/* Bookmark Feed Placeholder */}
-          <div className="md:col-span-2 space-y-4">
-             {/* Empty State Illustration or List */}
-             <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-3xl">
-                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
-                    <Globe className="text-slate-300" size={32} />
-                </div>
-                <p className="text-slate-400 font-medium">Your feed is looking a bit empty.</p>
-             </div>
-          </div>
-
-        </div>
+        </section>
       </main>
     </div>
   );
