@@ -1,34 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { supabase } from "@/lib/supabase/client";
-import  Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react"; // npm install lucide-react
 
 export default function Home() {
-  const [user, setUser] = useState<any>(null);
   const router = useRouter();
-
+  
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      if(!data.user) router.push("/login");
-    });
-  }, []);
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
 
+      if (user) {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/login");
+      }
+    };
+
+    checkAuth();
+  }, [router, supabase]);
+
+  // Minimalist "Redirecting" UI
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Home</h2>
-
-      {user ? (
-        <>
-          <p>Logged in as: {user.email}</p>
-          <button onClick={() => supabase.auth.signOut()}>Logout</button>
-        </>
-      ) : (
-        <p>Not logged in</p>
-      )}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="animate-spin text-black" size={32} />
+        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/40">
+          Verifying_Session...
+        </p>
+      </div>
     </div>
   );
 }
