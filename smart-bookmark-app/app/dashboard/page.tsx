@@ -1,168 +1,204 @@
-"use client"
+"use client";
 
-import { use, useEffect ,useState } from "react"
-import { supabase } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { Bookmark as BookmarkIcon, LogOut, Plus, Trash2, ExternalLink, Globe } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Loading from "@/components/ui/Loading";
 
-type Bookmark ={
-    id : string;
-    title : string;
-    url : string;
-    created_at : string;
-}
-export  default function DashboardPage(){
- const router = useRouter()
-
- const [user,setUser] = useState<any>(null)
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
- const [bookmarks,setBookmarks] = useState<Bookmark[]>([])
- const [loading,setLoading] = useState(true)
-
- useEffect(()=>{
-    // 1) Get user + fetch bookmarks
-    const load = async () =>{
-        const {data} = await supabase.auth.getUser()
-
-        if(!data.user){
-            router.push("/login")
-            return;
-        }
-
-        setUser(data.user);
-        const {data : bookmarksData} = await supabase
-        .from("bookmarks")
-        .select("*")
-        .order("created_at" ,{ascending:false});
-           
-       setBookmarks(bookmarksData||[])
-       setLoading(false)
-    
-    };
-    load();
- },[router]);
-
- //2realtime listnere
- useEffect(()=>{
-    if(!user) return;
-    
-    const channel = supabase
-    .channel("bookmarks-realtime")
-    .on(
-        "postgres_changes",
-       {
-        event: "*",
-          schema: "public",
-          table: "bookmarks",
-          filter: `user_id=eq.${user.id}`,
-       },
-       (payload) => {
-         // Refresh list after any insert/delete/update
-          supabase
-            .from("bookmarks")
-            .select("*")
-            .order("created_at", { ascending: false })
-            .then(({ data }) => {
-              setBookmarks(data || []);
-            });
-       }
-    )
-    .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-
- },[user])
-
- //3.add bookmark
- const handleAddBookmark = async () => {
- if(!title.trim() || !url.trim()) return;
- 
- await supabase.from("bookmarks").insert([
-   {
-     title,
-    url,
-    user_id : user.id,
-   }
-])
-setTitle(""),
-setUrl(" ")
-
+type Bookmark = {
+  id: string;
+  title: string;
+  url: string;
+  created_at: string;
 };
 
- // 4) Delete bookmark
+export default function DashboardPage() {
+  const router = useRouter();
+  
+
+  const [user, setUser] = useState<any>(null);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        router.push("/login");
+        return;
+      }
+      setUser(data.user);
+
+      const { data: bData } = await supabase
+        .from("bookmarks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      setBookmarks(bData || []);
+      setLoading(false);
+    };
+    loadData();
+  }, [router, supabase]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("realtime-bookmarks")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookmarks", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setBookmarks((prev) => [payload.new as Bookmark, ...prev]);
+          } else if (payload.eventType === "DELETE") {
+            setBookmarks((prev) => prev.filter((b) => b.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, supabase]);
+
+  const handleAddBookmark = async () => {
+    if (!title.trim() || !url.trim()) return;
+    const { error } = await supabase.from("bookmarks").insert([
+      { title, url, user_id: user.id }
+    ]);
+    if (!error) {
+      setTitle("");
+      setUrl("");
+    }
+  };
+
   const handleDelete = async (id: string) => {
     await supabase.from("bookmarks").delete().eq("id", id);
   };
 
-   // 5) Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
 
-  if (loading) return <div style={{ padding: 20 }}>Loading...</div>;
+  if (loading) return <Loading />;
 
-
-return (
-    <div style={{ padding: 20, maxWidth: 700, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h2>Smart Bookmark Dashboard</h2>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
-
-      <p>Logged in as: {user.email}</p>
-
-      <div style={{ marginTop: 20 }}>
-        <input
-          placeholder="Bookmark Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 10 }}
-        />
-        <input
-          placeholder="Bookmark URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          style={{ width: "100%", padding: 10, marginBottom: 10 }}
-        />
-        <button onClick={handleAddBookmark} style={{ padding: 10, width: "100%" }}>
-          Add Bookmark
-        </button>
-      </div>
-
-      <h3 style={{ marginTop: 30 }}>Your Bookmarks</h3>
-
-      {bookmarks.length === 0 ? (
-        <p>No bookmarks yet.</p>
-      ) : (
-        <ul style={{ marginTop: 10 }}>
-          {bookmarks.map((b) => (
-            <li
-              key={b.id}
-              style={{
-                padding: 12,
-                border: "1px solid #333",
-                borderRadius: 8,
-                marginBottom: 10,
-              }}
+  return (
+    <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white pb-20">
+      {/* --- HEADER --- */}
+      <header className="border-b border-black sticky top-0 bg-white/80 backdrop-blur-md z-50">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-bold tracking-tighter uppercase italic">
+            <div className="bg-black text-white p-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]">
+              <BookmarkIcon size={18} />
+            </div>
+            Smartmark
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="hidden md:block font-mono text-[10px] text-black/40 uppercase tracking-widest">
+              {user.email}
+            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLogout}
+              className="rounded-none border border-transparent hover:border-black hover:bg-white transition-all"
             >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div>
-                  <b>{b.title}</b>
-                  <br />
-                  <a href={b.url} target="_blank">
-                    {b.url}
-                  </a>
-                </div>
+              <LogOut size={16} className="mr-2" /> EXIT
+            </Button>
+          </div>
+        </div>
+      </header>
 
-                <button onClick={() => handleDelete(b.id)}>Delete</button>
+      <main className="max-w-4xl mx-auto px-6 pt-12">
+        {/* --- INPUT SECTION --- */}
+        <section className="mb-16">
+          <div className="border border-black p-6 bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] mb-4 text-black/40">Add_New_Entry</h2>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <Input
+                placeholder="Title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="md:col-span-2 rounded-none border-black focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-black font-medium"
+              />
+              <Input
+                placeholder="URL (https://...)"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="md:col-span-2 rounded-none border-black focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-black font-mono text-sm"
+              />
+              <Button 
+                onClick={handleAddBookmark}
+                className="rounded-none bg-black text-white hover:bg-black/90 h-10 transition-transform active:translate-y-0.5"
+              >
+                <Plus size={18} className="mr-2" /> SAVE
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* --- LIST SECTION --- */}
+        <section>
+          <div className="flex items-center justify-between mb-8 border-b border-black/10 pb-2">
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-black">Collections_Vault</h2>
+            <span className="font-mono text-[10px] text-black/40 underline underline-offset-4">{bookmarks.length} entries FOUND</span>
+          </div>
+
+          <div className="grid gap-4">
+            {bookmarks.length === 0 ? (
+              <div className="py-20 border border-dashed border-black/10 flex flex-col items-center justify-center opacity-30 grayscale">
+                <Globe size={40} strokeWidth={1} className="mb-4" />
+                <p className="font-mono text-xs italic tracking-tight">System is currently empty...</p>
               </div>
-            </li>
-          ))}
-        </ul>
-      )}
+            ) : (
+              bookmarks.map((b) => (
+                <div 
+                  key={b.id} 
+                  className="group relative border border-black/10 p-5 hover:border-black hover:bg-slate-50/50 transition-all duration-300"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <h3 className="font-bold text-lg leading-tight tracking-tight uppercase group-hover:underline">
+                        {b.title}
+                      </h3>
+                      <a 
+                        href={b.url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs font-mono text-black/40 hover:text-black transition-colors"
+                      >
+                        {b.url} <ExternalLink size={10} />
+                      </a>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => handleDelete(b.id)}
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 rounded-none text-black/20 hover:text-white hover:bg-black transition-all"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                  
+                  {/* Decorative timestamp */}
+                  <div className="mt-4 pt-4 border-t border-black/5">
+                    <span className="text-[8px] font-mono text-black/30 uppercase tracking-[0.2em]">
+                      Captured: {new Date(b.created_at).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </main>
     </div>
   );
-
 }
