@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Plus, LogOut, Bookmark, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
-  const supabase = createClient();
+  
 
   useEffect(() => {
     const checkUser = async () => {
