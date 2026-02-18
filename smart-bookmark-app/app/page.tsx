@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react"; // npm install lucide-react
+import Loading from "@/components/ui/Loading"; // Import your new component
 
 export default function Home() {
   const router = useRouter();
   
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,15 +24,6 @@ export default function Home() {
     checkAuth();
   }, [router, supabase]);
 
-  // Minimalist "Redirecting" UI
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="animate-spin text-black" size={32} />
-        <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/40">
-          Verifying_Session...
-        </p>
-      </div>
-    </div>
-  );
+  
+  return <Loading />;
 }
