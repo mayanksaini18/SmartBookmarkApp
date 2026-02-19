@@ -78,7 +78,10 @@ export default function DashboardPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("bookmarks").delete().eq("id", id);
+    const { error } = await supabase.from("bookmarks").delete().eq("id", id);
+    if (!error) {
+      setBookmarks((prev) => prev.filter((b) => b.id !== id));
+    }
   };
 
   const handleLogout = async () => {
