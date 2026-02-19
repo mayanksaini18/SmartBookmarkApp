@@ -166,15 +166,15 @@ export default function DashboardPage() {
                   className="group relative border border-black/10 p-5 hover:border-black hover:bg-slate-50/50 transition-all duration-300"
                 >
                   <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <h3 className="font-bold text-lg leading-tight tracking-tight uppercase group-hover:underline">
+                    <div className="space-y-1 overflow-hidden">
+                      <h3 className="font-bold text-lg leading-tight tracking-tight uppercase group-hover:underline truncate">
                         {b.title}
                       </h3>
                       <a 
                         href={b.url} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-xs font-mono text-black/40 hover:text-black transition-colors"
+                        className="flex items-center gap-1 text-xs font-mono text-black/40 hover:text-black transition-colors line-clamp-1 break-all"
                       >
                         {b.url} <ExternalLink size={10} />
                       </a>
