@@ -1,3 +1,7 @@
+## 🎥 Walkthrough Video
+
+[![Watch the demo](https://img.youtube.com/vi/01eX5l9Kbr8/0.jpg)](https://youtu.be/01eX5l9Kbr8)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
