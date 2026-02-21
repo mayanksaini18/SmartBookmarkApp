@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import Loading from "@/components/ui/Loading"; // Import your new component
+import Loading from "@/components/ui/Loading"; 
 
 export default function Home() {
   const router = useRouter();
