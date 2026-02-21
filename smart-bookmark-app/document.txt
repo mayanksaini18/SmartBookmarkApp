@@ -6,22 +6,18 @@ smart-bookmark-app/
 │   │       └── route.ts      # Handles Google OAuth redirect
 │   ├── login/
 │   │   └── page.tsx          # Login page with "Sign in with Google"
-│   ├── bookmarks/
+│   ├── dashboard/
 │   │   └── page.tsx          # Main Dashboard (Protected)
 │   ├── layout.tsx            # Root layout (Providers go here)
 │   └── page.tsx              # Landing page/Redirect logic
 ├── components/
 │   ├── ui/                   # Reusable Tailwind buttons/inputs
 │   ├── BookmarkList.tsx      # Handles REAL-TIME fetching & display
-│   ├── AddBookmarkForm.tsx   # Form to add URL + Title
-│   └── Navbar.tsx            # Logo and Logout button
+│  
 ├── lib/
 │   └── supabase/
 │       ├── client.ts         # Browser-side Supabase client
-│       └── server.ts         # Server-side Supabase client (SSR)
+│              
 ├── .env.local                # Your API keys (URL & Anon Key)
 └── middleware.ts             # Protects routes /bookmarks from guest users
 
-
-
-pass: @smartbookmarkapp
